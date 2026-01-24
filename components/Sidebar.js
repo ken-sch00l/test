@@ -32,12 +32,14 @@ export default function Sidebar() {
       }
     })
 
-    // Check if mobile on mount
+    // Check if mobile on mount and on resize
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768)
-      // Close sidebar on mobile, open on desktop
-      setIsOpen(window.innerWidth > 768)
+      const isThin = window.innerWidth < 768
+      setIsMobile(isThin)
+      // Close sidebar on thin screens, open on desktop
+      setIsOpen(window.innerWidth >= 768)
     }
+    
     checkMobile()
     window.addEventListener('resize', checkMobile)
 
@@ -311,20 +313,22 @@ const styles = {
   },
   toggleBtn: {
     position: 'fixed',
-    left: '1rem',
-    top: '5rem',
+    left: 'clamp(0.5rem, 2vw, 1rem)',
+    top: 'clamp(0.5rem, 2vw, 0.75rem)',
     backgroundColor: '#2c3e50',
     color: 'white',
-    border: 'none',
+    border: '2px solid white',
     borderRadius: '5px',
-    padding: '0.5rem 0.75rem',
-    fontSize: '1.2rem',
+    padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.5rem, 2vw, 0.75rem)',
+    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
     cursor: 'pointer',
-    zIndex: 1000,
+    zIndex: 1001,
     display: 'none',
-    '@media (maxWidth: 768px)': {
-      display: 'block',
-    },
+    minHeight: '44px',
+    minWidth: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   overlay: {
     position: 'fixed',
@@ -334,9 +338,5 @@ const styles = {
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
     zIndex: 998,
-    display: 'none',
-    '@media (maxWidth: 768px)': {
-      display: 'block',
-    },
   },
 }

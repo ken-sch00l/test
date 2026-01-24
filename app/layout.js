@@ -18,9 +18,10 @@ export default function RootLayout({ children }) {
           <div style={{ marginLeft: '250px' }} className="main-content">{children}</div>
         </NotificationProvider>
         <style>{`
-          @media (max-width: 768px) {
+          @media (max-width: 767px) {
             .main-content {
               margin-left: 0 !important;
+              width: 100%;
             }
           }
         `}</style>
