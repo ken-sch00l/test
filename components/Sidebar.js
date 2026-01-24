@@ -11,6 +11,7 @@ export default function Sidebar() {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState(null)
   const [isOpen, setIsOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   const [reminders, setReminders] = useState([])
   const [events, setEvents] = useState([])
 
@@ -31,7 +32,19 @@ export default function Sidebar() {
       }
     })
 
-    return () => unsubscribe()
+    // Check if mobile on mount
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+      // Close sidebar on mobile, open on desktop
+      setIsOpen(window.innerWidth > 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => {
+      unsubscribe()
+      window.removeEventListener('resize', checkMobile)
+    }
   }, [])
 
   const fetchReminders = async (userId) => {
@@ -71,14 +84,16 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        style={styles.toggleBtn}
-        title="Toggle Sidebar"
-      >
-        ☰
-      </button>
+      {/* Mobile toggle button - only show on mobile */}
+      {isMobile && (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          style={styles.toggleBtn}
+          title="Toggle Sidebar"
+        >
+          ☰
+        </button>
+      )}
 
       {/* Sidebar */}
       <aside style={{ ...styles.sidebar, ...(isOpen ? styles.sidebarOpen : styles.sidebarClosed) }}>
@@ -142,7 +157,7 @@ export default function Sidebar() {
       </aside>
 
       {/* Overlay for mobile */}
-      {isOpen && <div style={styles.overlay} onClick={() => setIsOpen(false)} />}
+      {isMobile && isOpen && <div style={styles.overlay} onClick={() => setIsOpen(false)} />}
     </>
   )
 }

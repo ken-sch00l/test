@@ -26,10 +26,25 @@ a:hover {
 
 button {
   font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 input,
 textarea,
 select {
   font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
 }

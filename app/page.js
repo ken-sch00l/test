@@ -106,18 +106,20 @@ const styles = {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '0 1rem',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   hero: {
     textAlign: 'center',
     padding: '3rem 1rem',
   },
   title: {
-    fontSize: '2.5rem',
+    fontSize: 'clamp(1.8rem, 5vw, 2.5rem)',
     color: '#2c3e50',
     marginBottom: '0.5rem',
   },
   subtitle: {
-    fontSize: '1.2rem',
+    fontSize: 'clamp(1rem, 3vw, 1.2rem)',
     color: '#7f8c8d',
     marginBottom: '2rem',
   },
@@ -183,8 +185,8 @@ const styles = {
   },
   eventsList: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-    gap: '1.5rem',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+    gap: '1rem',
   },
   loading: {
     textAlign: 'center',
