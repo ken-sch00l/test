@@ -15,6 +15,8 @@ export default function CreateEventPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState('')
+  const [time, setTime] = useState('09:00')
+  const [location, setLocation] = useState('')
   const [department, setDepartment] = useState('Engineering')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -50,10 +52,16 @@ export default function CreateEventPage() {
     setLoading(true)
 
     try {
+      const [hours, minutes] = time.split(':').map(Number)
+      const eventDateTime = new Date(date)
+      eventDateTime.setHours(hours, minutes, 0, 0)
+
       await addEvent({
         title,
         description,
-        date: new Date(date),
+        location,
+        date: eventDateTime,
+        time: time,
         department,
         createdBy: user.email,
       })
@@ -100,11 +108,33 @@ export default function CreateEventPage() {
             </div>
 
             <div style={styles.formGroup}>
+              <label>Location:</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                style={styles.input}
+                placeholder="e.g., Room 101, Building A or Facebook Event Link"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
               <label>Date:</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                required
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label>Time:</label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
                 required
                 style={styles.input}
               />

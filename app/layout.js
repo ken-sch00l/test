@@ -1,4 +1,6 @@
 import './globals.css'
+import Sidebar from '@/components/Sidebar'
+import NotificationProvider from '@/components/NotificationProvider'
 
 export const metadata = {
   title: 'Event Reminder App',
@@ -8,7 +10,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <NotificationProvider>
+          <Sidebar />
+          <div style={{ marginLeft: '250px' }}>{children}</div>
+        </NotificationProvider>
+      </body>
     </html>
   )
 }
