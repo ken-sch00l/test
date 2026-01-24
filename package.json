@@ -1,0 +1,21 @@
+{
+  "name": "event-reminder-app",
+  "version": "1.0.0",
+  "description": "Event reminder app with Firebase and Next.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "firebase": "^10.14.1",
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0"
+  }
+}
