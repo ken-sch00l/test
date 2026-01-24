@@ -10,6 +10,7 @@ import { getEventsByDepartment, addReminder, getRemindersByUser, removeReminder 
 import { doc, getDoc } from 'firebase/firestore'
 import EventCard from '@/components/EventCard'
 import Navbar from '@/components/Navbar'
+import ReminderSettings from '@/components/ReminderSettings'
 
 const departments = ['Engineering', 'Business', 'Arts', 'Science', 'Medicine', 'Law']
 
@@ -20,6 +21,8 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [notificationText, setNotificationText] = useState('')
+  const [selectedReminder, setSelectedReminder] = useState(null)
+  const [pendingReminderEventId, setPendingReminderEventId] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -70,16 +73,13 @@ export default function StudentDashboard() {
       return
     }
 
-    try {
-      await addReminder(user.uid, eventId)
-      setNotificationText('✅ Reminder added! You will see visual highlights for upcoming events.')
-      setTimeout(() => setNotificationText(''), 3000)
-
-      // Refresh reminders
-      fetchReminders(user.uid)
-    } catch (error) {
-      alert('Error adding reminder: ' + error.message)
-    }
+    // Show modal to select reminder time
+    setPendingReminderEventId(eventId)
+    setSelectedReminder({
+      id: null,
+      eventId: eventId,
+      reminderTime: '1 day',
+    })
   }
 
   const handleRemoveReminder = async (reminderId) => {
@@ -116,33 +116,20 @@ export default function StudentDashboard() {
               </option>
             ))}
           </select>
-        </div>
 
-        {user && (
-          <div style={styles.remindersSection}>
-            <h2>My Reminders ({reminders.length})</h2>
-            {reminders.length === 0 ? (
-              <p style={styles.noReminders}>No reminders yet. Click "Remind Me" on events!</p>
-            ) : (
-              <ul style={styles.remindersList}>
-                {reminders.map((reminder) => {
-                  const event = events.find((e) => e.id === reminder.eventId)
-                  return (
-                    <li key={reminder.id} style={styles.reminderItem}>
-                      {event ? event.title : 'Event not found'}
-                      <button
-                        onClick={() => handleRemoveReminder(reminder.id)}
-                        style={styles.removeBtn}
-                      >
-                        ✕
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        )}
+          {/* Demo Button */}
+          <button
+            onClick={() => {
+              if (window.showDemoAlert) {
+                window.showDemoAlert('🎉 Event is starting now!', 'warning', 5000)
+              }
+            }}
+            style={styles.demoBtn}
+            title="Test notification system"
+          >
+            🔔 Demo Alert
+          </button>
+        </div>
 
         {loading ? (
           <p>Loading events...</p>
@@ -151,18 +138,61 @@ export default function StudentDashboard() {
         ) : (
           <div>
             <p style={styles.count}>Total Events: {events.length}</p>
-            {events.map((event) => (
-              <div key={event.id}>
-                <EventCard
-                  event={event}
-                  onRemind={() => handleRemind(event.id)}
-                  showActions={false}
-                />
-                {reminderEventIds.has(event.id) && (
-                  <p style={styles.reminderBadge}>🔔 You have a reminder for this event</p>
-                )}
-              </div>
-            ))}
+            {/* Sort events: un-reminded first */}
+            {events
+              .sort((a, b) => {
+                const aReminded = reminders.some((r) => r.eventId === a.id)
+                const bReminded = reminders.some((r) => r.eventId === b.id)
+                return aReminded - bReminded // false (0) comes before true (1)
+              })
+              .map((event) => {
+                const reminder = reminders.find((r) => r.eventId === event.id)
+                const isShowingModal = (selectedReminder && pendingReminderEventId === event.id) || (selectedReminder?.eventId === event.id && !pendingReminderEventId)
+              return (
+                <div key={event.id}>
+                  <div style={styles.eventWrapper}>
+                    <EventCard
+                      event={event}
+                      onRemind={() => handleRemind(event.id)}
+                      showActions={false}
+                    />
+                    {reminder && (
+                      <div style={styles.remindedBadge}>
+                        ✅ Reminded - {reminder.reminderTime} before
+                        <button
+                          onClick={() => setSelectedReminder(reminder)}
+                          style={styles.editReminderBtn}
+                        >
+                          ⚙️ Edit
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Modal appears just below the event */}
+                  {isShowingModal && selectedReminder && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <ReminderSettings
+                        reminder={selectedReminder}
+                        event={event}
+                        onClose={() => {
+                          setSelectedReminder(null)
+                          setPendingReminderEventId(null)
+                        }}
+                        onUpdate={() => {
+                          if (user) {
+                            fetchReminders(user.uid)
+                          }
+                          setPendingReminderEventId(null)
+                        }}
+                        userId={user?.uid}
+                        isNewReminder={pendingReminderEventId === event.id}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
@@ -184,6 +214,7 @@ const styles = {
     display: 'flex',
     gap: '1rem',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   label: {
     fontWeight: 'bold',
@@ -194,6 +225,16 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px',
     fontSize: '1rem',
+  },
+  demoBtn: {
+    padding: '0.5rem 1rem',
+    backgroundColor: '#9b59b6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    fontWeight: 'bold',
   },
   remindersSection: {
     backgroundColor: '#f0f8ff',
@@ -240,14 +281,42 @@ const styles = {
     color: '#7f8c8d',
     marginBottom: '1rem',
   },
-  reminderBadge: {
+  eventWrapper: {
+    marginBottom: '1.5rem',
+  },
+  remindedBadge: {
     backgroundColor: '#e8f5e9',
     color: '#27ae60',
-    padding: '0.5rem 1rem',
+    padding: '0.75rem 1rem',
     borderRadius: '4px',
     fontSize: '0.9rem',
     marginTop: '-0.8rem',
     marginBottom: '1rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontWeight: '500',
+  },
+  reminderBadge: {
+    backgroundColor: '#e8f5e9',
+    color: '#27ae60',
+    padding: '0.75rem 1rem',
+    borderRadius: '4px',
+    fontSize: '0.9rem',
+    marginTop: '-0.8rem',
+    marginBottom: '1rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  editReminderBtn: {
+    backgroundColor: '#2196F3',
+    color: 'white',
+    border: 'none',
+    padding: '0.4rem 0.8rem',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
   },
   notification: {
     backgroundColor: '#d4edda',

@@ -6,10 +6,14 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth } from '@/lib/firebase'
+import { getAllEvents } from '@/lib/events'
 import Navbar from '@/components/Navbar'
+import EventCard from '@/components/EventCard'
 
 export default function Home() {
   const [user, setUser] = useState(null)
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
@@ -18,6 +22,22 @@ export default function Home() {
     })
 
     return () => unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true)
+        const data = await getAllEvents()
+        setEvents(data)
+      } catch (error) {
+        console.error('Error fetching events:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvents()
   }, [])
 
   return (
@@ -48,35 +68,33 @@ export default function Home() {
               <p style={styles.welcome}>Welcome, {user.email}!</p>
               <button
                 onClick={() => router.push('/student')}
-                style={styles.primaryBtn}
+                style={styles.viewEventsBtn}
               >
-                View Events
+                👉 View Events
               </button>
             </div>
           )}
         </div>
 
-        <div style={styles.features}>
-          <div style={styles.feature}>
-            <span style={styles.icon}>👥</span>
-            <h3>Two Roles</h3>
-            <p>Admins manage events, students browse and set reminders</p>
-          </div>
-          <div style={styles.feature}>
-            <span style={styles.icon}>📅</span>
-            <h3>Easy Event Management</h3>
-            <p>Create, edit, and delete events with a simple interface</p>
-          </div>
-          <div style={styles.feature}>
-            <span style={styles.icon}>🔔</span>
-            <h3>Smart Reminders</h3>
-            <p>Visual highlights for events within 2 days</p>
-          </div>
-          <div style={styles.feature}>
-            <span style={styles.icon}>🏢</span>
-            <h3>Department Filtering</h3>
-            <p>Find events relevant to your department</p>
-          </div>
+        {/* Events Section */}
+        <div style={styles.eventsSection}>
+          <h2 style={styles.sectionTitle}>📌 Upcoming Events</h2>
+
+          {loading ? (
+            <p style={styles.loading}>Loading events...</p>
+          ) : events.length === 0 ? (
+            <p style={styles.noEvents}>No events scheduled yet.</p>
+          ) : (
+            <div style={styles.eventsList}>
+              {events.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  showActions={false}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -113,47 +131,70 @@ const styles = {
     backgroundColor: '#3498db',
     color: 'white',
     border: 'none',
-    padding: '0.75rem 2rem',
-    borderRadius: '4px',
+    padding: '12px 30px',
     fontSize: '1rem',
+    borderRadius: '5px',
     cursor: 'pointer',
     fontWeight: 'bold',
+    transition: 'background-color 0.2s',
   },
   secondaryBtn: {
-    backgroundColor: '#95a5a6',
-    color: 'white',
-    border: 'none',
-    padding: '0.75rem 2rem',
-    borderRadius: '4px',
+    backgroundColor: '#ecf0f1',
+    color: '#2c3e50',
+    border: '2px solid #3498db',
+    padding: '10px 28px',
     fontSize: '1rem',
+    borderRadius: '5px',
     cursor: 'pointer',
+    fontWeight: 'bold',
+    transition: 'background-color 0.2s',
   },
   userSection: {
     padding: '2rem',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ecf0f1',
     borderRadius: '8px',
   },
   welcome: {
     fontSize: '1.1rem',
     color: '#2c3e50',
-    marginBottom: '1rem',
+    margin: 0,
   },
-  features: {
+  viewEventsBtn: {
+    marginTop: '1rem',
+    backgroundColor: '#27ae60',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    fontWeight: 'bold',
+  },
+  eventsSection: {
+    marginTop: '3rem',
+    marginBottom: '3rem',
+  },
+  sectionTitle: {
+    fontSize: '1.8rem',
+    color: '#2c3e50',
+    marginBottom: '2rem',
+    borderBottom: '2px solid #3498db',
+    paddingBottom: '0.5rem',
+  },
+  eventsList: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '2rem',
-    margin: '3rem 0',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+    gap: '1.5rem',
   },
-  feature: {
-    backgroundColor: 'white',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+  loading: {
     textAlign: 'center',
+    color: '#7f8c8d',
+    padding: '2rem',
   },
-  icon: {
-    fontSize: '2rem',
-    display: 'block',
-    marginBottom: '1rem',
+  noEvents: {
+    textAlign: 'center',
+    color: '#7f8c8d',
+    padding: '2rem',
+    fontSize: '1.1rem',
   },
 }

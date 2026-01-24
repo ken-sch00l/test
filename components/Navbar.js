@@ -55,9 +55,14 @@ export default function Navbar() {
                 </Link>
               )}
               {role === 'student' && (
-                <Link href="/student" style={styles.link}>
-                  My Events
-                </Link>
+                <>
+                  <Link href="/student" style={styles.link}>
+                    My Events
+                  </Link>
+                  <Link href="/student/reminders" style={styles.link}>
+                    🔔 My Reminders
+                  </Link>
+                </>
               )}
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 Logout

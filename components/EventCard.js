@@ -6,10 +6,16 @@ import { isEventUpcoming } from '@/lib/events'
 export default function EventCard({ event, onRemind, onEdit, onDelete, showActions = false }) {
   const isUpcoming = isEventUpcoming(event.date?.toDate?.() || event.date)
   const eventDate = event.date?.toDate?.() || new Date(event.date)
+  
+  const formatTime = (date) => {
+    if (!date) return ''
+    const d = date.toDate ? date.toDate() : new Date(date)
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  }
 
   return (
     <div style={{ ...styles.card, ...(isUpcoming && styles.cardUpcoming) }}>
-      {isUpcoming && <span style={styles.upcomingBadge}>⏰ Within 2 Days</span>}
+      {isUpcoming && <span style={styles.upcomingBadge}>⏰ Today/Tomorrow</span>}
 
       <h3 style={styles.title}>{event.title}</h3>
 
@@ -17,10 +23,23 @@ export default function EventCard({ event, onRemind, onEdit, onDelete, showActio
 
       <div style={styles.meta}>
         <span>📅 {eventDate.toLocaleDateString()}</span>
+        <span>🕐 {formatTime(eventDate)}</span>
         <span>🏢 {event.department}</span>
+        {event.location && <span>📍 {event.location.substring(0, 40)}{event.location.length > 40 ? '...' : ''}</span>}
       </div>
 
       {event.createdBy && <p style={styles.createdBy}>by {event.createdBy}</p>}
+
+      {event.location && event.location.startsWith('http') && (
+        <a
+          href={event.location}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={styles.seeMoreLink}
+        >
+          🔗 See More Details
+        </a>
+      )}
 
       <div style={styles.actions}>
         {onRemind && (
@@ -86,6 +105,15 @@ const styles = {
     fontSize: '0.85rem',
     color: '#95a5a6',
     marginBottom: '1rem',
+  },
+  seeMoreLink: {
+    display: 'inline-block',
+    color: '#3498db',
+    textDecoration: 'none',
+    marginBottom: '1rem',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    borderBottom: '1px solid #3498db',
   },
   actions: {
     display: 'flex',
