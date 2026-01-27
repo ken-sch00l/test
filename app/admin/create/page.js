@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { auth } from '@/lib/firebase'
 import { addEvent } from '@/lib/events'
 import Navbar from '@/components/Navbar'
+import styles from './page.module.css'
 
 const departments = ['Engineering', 'Business', 'Arts', 'Science', 'Medicine', 'Law']
 
@@ -17,11 +18,16 @@ export default function CreateEventPage() {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
   const [location, setLocation] = useState('')
+  const [fbLink, setFbLink] = useState('')
   const [department, setDepartment] = useState('Engineering')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState(null)
+  const [fbPosts, setFbPosts] = useState([])
+  const [fetchingPosts, setFetchingPosts] = useState(false)
+  const [showPosts, setShowPosts] = useState(false)
   const router = useRouter()
+  const PAGE_ID = '61586999619228'
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -34,6 +40,40 @@ export default function CreateEventPage() {
 
     return () => unsubscribe()
   }, [router])
+
+  const fetchFacebookPosts = async () => {
+    try {
+      setError('')
+      setFetchingPosts(true)
+      
+      const response = await fetch('/api/facebook/fetch-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageId: PAGE_ID })
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        setError('Error fetching posts: ' + (data.error || 'Unknown error'))
+        return
+      }
+      
+      setFbPosts(data.posts)
+      setShowPosts(true)
+    } catch (err) {
+      setError('Error fetching Facebook posts: ' + err.message)
+    } finally {
+      setFetchingPosts(false)
+    }
+  }
+
+  const fillFromPost = (post) => {
+    setTitle(post.message.split('\n')[0] || 'Event from Facebook')
+    setDescription(post.message)
+    setShowPosts(false)
+    setError('')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -60,6 +100,7 @@ export default function CreateEventPage() {
         title,
         description,
         location,
+        fbLink,
         date: eventDateTime,
         time: time,
         department,
@@ -77,72 +118,83 @@ export default function CreateEventPage() {
   return (
     <>
       <Navbar />
-      <div style={styles.container}>
-        <div style={styles.formBox}>
+      <div className={styles.container}>
+        <div className={styles.formBox}>
           <h1>Create New Event</h1>
 
-          {error && <div style={styles.error}>{error}</div>}
+          {error && <div className={styles.error}>{error}</div>}
 
           <form onSubmit={handleSubmit}>
-            <div style={styles.formGroup}>
+            <div className={styles.formGroup}>
               <label>Title:</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                style={styles.input}
+                className={styles.input}
                 placeholder="e.g., Tech Workshop"
               />
             </div>
 
-            <div style={styles.formGroup}>
+            <div className={styles.formGroup}>
               <label>Description:</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                style={styles.textarea}
+                className={styles.textarea}
                 placeholder="Event details..."
                 rows="4"
               />
             </div>
 
-            <div style={styles.formGroup}>
+            <div className={styles.formGroup}>
               <label>Location:</label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                style={styles.input}
-                placeholder="e.g., Room 101, Building A or Facebook Event Link"
+                className={styles.input}
+                placeholder="e.g., Room 101, Building A"
               />
             </div>
 
-            <div style={styles.formGroup}>
+            <div className={styles.formGroup}>
+              <label>Facebook Event Link (Optional):</label>
+              <input
+                type="url"
+                value={fbLink}
+                onChange={(e) => setFbLink(e.target.value)}
+                className={styles.input}
+                placeholder="https://www.facebook.com/events/123456789"
+              />
+            </div>
+
+            <div className={styles.formGroup}>
               <label>Date:</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
-                style={styles.input}
+                className={styles.input}
               />
             </div>
 
-            <div style={styles.formGroup}>
+            <div className={styles.formGroup}>
               <label>Time:</label>
               <input
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 required
-                style={styles.input}
+                className={styles.input}
               />
             </div>
 
-            <div style={styles.formGroup}>
+            <div className={styles.formGroup}>
               <label>Department:</label>
-              <select value={department} onChange={(e) => setDepartment(e.target.value)} style={styles.select}>
+              <select value={department} onChange={(e) => setDepartment(e.target.value)} className={styles.select}>
                 {departments.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
@@ -151,14 +203,44 @@ export default function CreateEventPage() {
               </select>
             </div>
 
-            <div style={styles.actions}>
-              <button type="submit" disabled={loading} style={styles.createBtn}>
+            <div className={styles.formGroup}>
+              <button
+                type="button"
+                onClick={() => fetchFacebookPosts()}
+                disabled={fetchingPosts}
+                className={styles.fbPostsBtn}
+              >
+                {fetchingPosts ? '⏳ Loading Posts...' : '📱 Load My Facebook Posts'}
+              </button>
+            </div>
+
+            {showPosts && fbPosts.length > 0 && (
+              <div className={styles.postsContainer}>
+                <h3>Select a post to fill the form:</h3>
+                {fbPosts.map((post) => (
+                  <div key={post.id} className={styles.postCard}>
+                    <p className={styles.postMessage}>{post.message.substring(0, 150)}...</p>
+                    <small className={styles.postDate}>{new Date(post.createdTime).toLocaleDateString()}</small>
+                    <button
+                      type="button"
+                      onClick={() => fillFromPost(post)}
+                      className={styles.selectPostBtn}
+                    >
+                      Use This Post
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className={styles.actions}>
+              <button type="submit" disabled={loading} className={styles.createBtn}>
                 {loading ? 'Creating...' : 'Create Event'}
               </button>
               <button
                 type="button"
                 onClick={() => router.push('/admin')}
-                style={styles.cancelBtn}
+                className={styles.cancelBtn}
               >
                 Cancel
               </button>
@@ -168,84 +250,4 @@ export default function CreateEventPage() {
       </div>
     </>
   )
-}
-
-const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    padding: '2rem 1rem',
-  },
-  formBox: {
-    backgroundColor: 'white',
-    padding: '2rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-    width: '100%',
-    maxWidth: '600px',
-  },
-  formGroup: {
-    marginBottom: '1.5rem',
-  },
-  input: {
-    width: '100%',
-    padding: '0.75rem',
-    marginTop: '0.5rem',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '1rem',
-    boxSizing: 'border-box',
-  },
-  textarea: {
-    width: '100%',
-    padding: '0.75rem',
-    marginTop: '0.5rem',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '1rem',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-  },
-  select: {
-    width: '100%',
-    padding: '0.75rem',
-    marginTop: '0.5rem',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '1rem',
-    boxSizing: 'border-box',
-  },
-  actions: {
-    display: 'flex',
-    gap: '1rem',
-  },
-  createBtn: {
-    flex: 1,
-    padding: '0.75rem',
-    backgroundColor: '#27ae60',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-  },
-  cancelBtn: {
-    flex: 1,
-    padding: '0.75rem',
-    backgroundColor: '#95a5a6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '1rem',
-    cursor: 'pointer',
-  },
-  error: {
-    backgroundColor: '#fee',
-    color: '#c00',
-    padding: '1rem',
-    borderRadius: '4px',
-    marginBottom: '1rem',
-    border: '1px solid #fcc',
-  },
 }

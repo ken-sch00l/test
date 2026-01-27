@@ -30,16 +30,29 @@ export default function EventCard({ event, onRemind, onEdit, onDelete, showActio
 
       {event.createdBy && <p style={styles.createdBy}>by {event.createdBy}</p>}
 
-      {event.location && event.location.startsWith('http') && (
-        <a
-          href={event.location}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={styles.seeMoreLink}
-        >
-          🔗 See More Details
-        </a>
-      )}
+      <div style={styles.linksSection}>
+        {event.fbLink && event.fbLink.trim() && (
+          <a
+            href={event.fbLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.fbLink}
+            title="View event on Facebook"
+          >
+            👍 More Details on Facebook
+          </a>
+        )}
+        {event.location && event.location.startsWith('http') && (
+          <a
+            href={event.location}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.seeMoreLink}
+          >
+            🔗 See More Details
+          </a>
+        )}
+      </div>
 
       <div style={styles.actions}>
         {onRemind && (
@@ -124,10 +137,27 @@ const styles = {
     display: 'inline-block',
     color: '#3498db',
     textDecoration: 'none',
-    marginBottom: '1rem',
+    marginBottom: '0.5rem',
+    marginRight: '1rem',
     fontSize: '0.9rem',
     fontWeight: '500',
     borderBottom: '1px solid #3498db',
+  },
+  fbLink: {
+    display: 'inline-block',
+    color: '#1877f2',
+    textDecoration: 'none',
+    marginBottom: '1rem',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    borderBottom: '2px solid #1877f2',
+    paddingBottom: '2px',
+  },
+  linksSection: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '1rem',
+    marginBottom: '1rem',
   },
   actions: {
     display: 'flex',
