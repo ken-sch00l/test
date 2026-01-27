@@ -30,16 +30,29 @@ export default function EventCard({ event, onRemind, onEdit, onDelete, showActio
 
       {event.createdBy && <p style={styles.createdBy}>by {event.createdBy}</p>}
 
-      {event.location && event.location.startsWith('http') && (
-        <a
-          href={event.location}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={styles.seeMoreLink}
-        >
-          🔗 See More Details
-        </a>
-      )}
+      <div style={styles.linksSection}>
+        {event.fbLink && event.fbLink.trim() && (
+          <a
+            href={event.fbLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.fbLink}
+            title="View event on Facebook"
+          >
+            👍 More Details on Facebook
+          </a>
+        )}
+        {event.location && event.location.startsWith('http') && (
+          <a
+            href={event.location}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.seeMoreLink}
+          >
+            🔗 See More Details
+          </a>
+        )}
+      </div>
 
       <div style={styles.actions}>
         {onRemind && (
@@ -67,9 +80,13 @@ const styles = {
     backgroundColor: 'white',
     border: '1px solid #ecf0f1',
     borderRadius: '8px',
-    padding: '1.5rem',
+    padding: 'clamp(1rem, 5vw, 1.5rem)',
     marginBottom: '1rem',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    width: '100%',
+    boxSizing: 'border-box',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
   },
   cardUpcoming: {
     borderLeft: '4px solid #f39c12',
@@ -87,36 +104,64 @@ const styles = {
   title: {
     margin: '0.5rem 0',
     color: '#2c3e50',
-    fontSize: '1.3rem',
+    fontSize: 'clamp(1.1rem, 4vw, 1.3rem)',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
   },
   description: {
     color: '#555',
     marginBottom: '1rem',
     lineHeight: '1.5',
+    fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
   },
   meta: {
     display: 'flex',
-    gap: '1rem',
-    fontSize: '0.9rem',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
     color: '#7f8c8d',
     marginBottom: '0.5rem',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
   },
   createdBy: {
-    fontSize: '0.85rem',
+    fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)',
     color: '#95a5a6',
     marginBottom: '1rem',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
   },
   seeMoreLink: {
     display: 'inline-block',
     color: '#3498db',
     textDecoration: 'none',
-    marginBottom: '1rem',
+    marginBottom: '0.5rem',
+    marginRight: '1rem',
     fontSize: '0.9rem',
     fontWeight: '500',
     borderBottom: '1px solid #3498db',
   },
+  fbLink: {
+    display: 'inline-block',
+    color: '#1877f2',
+    textDecoration: 'none',
+    marginBottom: '1rem',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    borderBottom: '2px solid #1877f2',
+    paddingBottom: '2px',
+  },
+  linksSection: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '1rem',
+    marginBottom: '1rem',
+  },
   actions: {
     display: 'flex',
+    flexWrap: 'wrap',
     gap: '0.5rem',
     marginTop: '1rem',
   },
@@ -124,27 +169,36 @@ const styles = {
     backgroundColor: '#3498db',
     color: 'white',
     border: 'none',
-    padding: '0.5rem 1rem',
+    padding: '0.65rem 1rem',
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '0.9rem',
+    minHeight: '44px',
+    flex: 1,
+    minWidth: '120px',
   },
   editBtn: {
     backgroundColor: '#27ae60',
     color: 'white',
     border: 'none',
-    padding: '0.5rem 1rem',
+    padding: '0.65rem 1rem',
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '0.9rem',
+    minHeight: '44px',
+    flex: 1,
+    minWidth: '100px',
   },
   deleteBtn: {
     backgroundColor: '#e74c3c',
     color: 'white',
     border: 'none',
-    padding: '0.5rem 1rem',
+    padding: '0.65rem 1rem',
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '0.9rem',
+    minHeight: '44px',
+    flex: 1,
+    minWidth: '100px',
   },
 }

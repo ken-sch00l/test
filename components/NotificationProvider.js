@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { initializeMessaging, onMessageListener } from '@/lib/firebase'
 
 export default function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([])
@@ -20,6 +21,50 @@ export default function NotificationProvider({ children }) {
     return () => {
       delete window.showDemoAlert
     }
+  }, [])
+
+  // Listen for FCM messages
+  useEffect(() => {
+    const setupMessaging = async () => {
+      try {
+        const messaging = await initializeMessaging()
+        if (messaging) {
+          const unsubscribe = onMessageListener()
+          unsubscribe.then(() => {
+            // Message listener is set up
+          })
+
+          // Also handle foreground messages
+          const messageListener = async () => {
+            const payload = await onMessageListener()
+            if (payload) {
+              const { notification, data } = payload
+              const id = Date.now()
+              setNotifications((prev) => [
+                ...prev,
+                {
+                  id,
+                  message: `${notification?.title || 'Notification'}: ${notification?.body || ''}`,
+                  type: 'info',
+                  data,
+                },
+              ])
+
+              // Auto-remove after 6 seconds
+              setTimeout(() => {
+                setNotifications((prev) => prev.filter((n) => n.id !== id))
+              }, 6000)
+            }
+          }
+
+          messageListener()
+        }
+      } catch (error) {
+        console.log('FCM setup skipped:', error.message)
+      }
+    }
+
+    setupMessaging()
   }, [])
 
   const removeNotification = (id) => {

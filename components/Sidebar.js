@@ -11,6 +11,7 @@ export default function Sidebar() {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState(null)
   const [isOpen, setIsOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   const [reminders, setReminders] = useState([])
   const [events, setEvents] = useState([])
 
@@ -31,7 +32,21 @@ export default function Sidebar() {
       }
     })
 
-    return () => unsubscribe()
+    // Check if mobile on mount and on resize
+    const checkMobile = () => {
+      const isThin = window.innerWidth < 768
+      setIsMobile(isThin)
+      // Close sidebar on thin screens, open on desktop
+      setIsOpen(window.innerWidth >= 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => {
+      unsubscribe()
+      window.removeEventListener('resize', checkMobile)
+    }
   }, [])
 
   const fetchReminders = async (userId) => {
@@ -71,14 +86,16 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        style={styles.toggleBtn}
-        title="Toggle Sidebar"
-      >
-        ☰
-      </button>
+      {/* Mobile toggle button - only show on mobile */}
+      {isMobile && (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          style={styles.toggleBtn}
+          title="Toggle Sidebar"
+        >
+          ☰
+        </button>
+      )}
 
       {/* Sidebar */}
       <aside style={{ ...styles.sidebar, ...(isOpen ? styles.sidebarOpen : styles.sidebarClosed) }}>
@@ -142,7 +159,7 @@ export default function Sidebar() {
       </aside>
 
       {/* Overlay for mobile */}
-      {isOpen && <div style={styles.overlay} onClick={() => setIsOpen(false)} />}
+      {isMobile && isOpen && <div style={styles.overlay} onClick={() => setIsOpen(false)} />}
     </>
   )
 }
@@ -296,20 +313,22 @@ const styles = {
   },
   toggleBtn: {
     position: 'fixed',
-    left: '1rem',
-    top: '5rem',
+    left: 'clamp(0.5rem, 2vw, 1rem)',
+    top: 'clamp(0.5rem, 2vw, 0.75rem)',
     backgroundColor: '#2c3e50',
     color: 'white',
-    border: 'none',
+    border: '2px solid white',
     borderRadius: '5px',
-    padding: '0.5rem 0.75rem',
-    fontSize: '1.2rem',
+    padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.5rem, 2vw, 0.75rem)',
+    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
     cursor: 'pointer',
-    zIndex: 1000,
+    zIndex: 1001,
     display: 'none',
-    '@media (maxWidth: 768px)': {
-      display: 'block',
-    },
+    minHeight: '44px',
+    minWidth: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   overlay: {
     position: 'fixed',
@@ -319,9 +338,5 @@ const styles = {
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
     zIndex: 998,
-    display: 'none',
-    '@media (maxWidth: 768px)': {
-      display: 'block',
-    },
   },
 }
