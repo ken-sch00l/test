@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth } from '@/lib/firebase'
 import { addEvent } from '@/lib/events'
-import Navbar from '@/components/Navbar'
 
 const departments = ['Engineering', 'Business', 'Arts', 'Science', 'Medicine', 'Law']
 
@@ -75,15 +74,13 @@ export default function CreateEventPage() {
   }
 
   return (
-    <>
-      <Navbar />
-      <div style={styles.container}>
-        <div style={styles.formBox}>
-          <h1>Create New Event</h1>
+    <div style={styles.container}>
+      <div style={styles.formBox}>
+        <h1>Create New Event</h1>
 
-          {error && <div style={styles.error}>{error}</div>}
+        {error && <div style={styles.error}>{error}</div>}
 
-          <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
             <div style={styles.formGroup}>
               <label>Title:</label>
               <input
@@ -166,7 +163,6 @@ export default function CreateEventPage() {
           </form>
         </div>
       </div>
-    </>
   )
 }
 

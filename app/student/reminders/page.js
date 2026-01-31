@@ -81,7 +81,7 @@ export default function RemindersPage() {
       {loading ? (
         <p style={styles.loading}>Loading reminders...</p>
       ) : reminders.length === 0 ? (
-        <p style={styles.empty}>No reminders set yet. Go to events and click "Remind Me"!</p>
+        <p style={styles.empty}>No reminders set yet. Go to events and click &quot;Remind Me&quot;!</p>
       ) : (
         <div style={styles.remindersList}>
           {reminders.map((reminder) => (

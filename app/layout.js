@@ -1,5 +1,6 @@
 import './globals.css'
-import Sidebar from '@/components/Sidebar'
+import FloatingActionButton from '@/components/Sidebar'
+import Navbar from '@/components/Navbar'
 import NotificationProvider from '@/components/NotificationProvider'
 
 export const metadata = {
@@ -12,8 +13,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <NotificationProvider>
-          <Sidebar />
-          <div style={{ marginLeft: '250px' }}>{children}</div>
+          <Navbar />
+          <FloatingActionButton />
+          <main className="main-content">{children}</main>
         </NotificationProvider>
       </body>
     </html>

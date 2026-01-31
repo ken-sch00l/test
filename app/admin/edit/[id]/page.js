@@ -3,12 +3,11 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { updateEvent } from '@/lib/events'
 import { doc, getDoc } from 'firebase/firestore'
-import Navbar from '@/components/Navbar'
 
 const departments = ['Engineering', 'Business', 'Arts', 'Science', 'Medicine', 'Law']
 
@@ -36,9 +35,9 @@ export default function EditEventPage() {
     })
 
     return () => unsubscribe()
-  }, [router, eventId])
+  }, [router, eventId, fetchEvent])
 
-  const fetchEvent = async () => {
+  const fetchEvent = useCallback(async () => {
     try {
       const eventDoc = await getDoc(doc(db, 'events', eventId))
       if (eventDoc.exists()) {
@@ -60,7 +59,7 @@ export default function EditEventPage() {
     } finally {
       setInitialLoading(false)
     }
-  }
+  }, [eventId])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -103,11 +102,9 @@ export default function EditEventPage() {
   if (initialLoading) return <p>Loading...</p>
 
   return (
-    <>
-      <Navbar />
-      <div style={styles.container}>
-        <div style={styles.formBox}>
-          <h1>Edit Event</h1>
+    <div style={styles.container}>
+      <div style={styles.formBox}>
+        <h1>Edit Event</h1>
 
           {error && <div style={styles.error}>{error}</div>}
 
@@ -192,7 +189,6 @@ export default function EditEventPage() {
           </form>
         </div>
       </div>
-    </>
   )
 }
 
