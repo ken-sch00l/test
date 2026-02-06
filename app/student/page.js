@@ -261,57 +261,6 @@ export default function StudentDashboard() {
         </button>
       </div>
 
-      {/* Calendar Section */}
-      <div style={styles.calendarSection}>
-        <h2 style={styles.sectionTitle}>📅 Event Calendar</h2>
-        <div style={styles.calendarContainer}>
-          <div style={styles.calendarHeader}>
-            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} style={styles.calendarNavBtn} className="calendar-nav-btn">
-              ‹
-            </button>
-            <h3 style={styles.calendarTitle}>
-              {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </h3>
-            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} style={styles.calendarNavBtn} className="calendar-nav-btn">
-              ›
-            </button>
-          </div>
-          <div style={styles.calendarGrid}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} style={styles.calendarDayHeader}>{day}</div>
-            ))}
-            {getDaysInMonth(currentMonth).map((date, index) => (
-              <div
-                key={index}
-                style={{
-                  ...styles.calendarDay,
-                  ...(date && getEventsForDate(date).length > 0 ? styles.calendarDayWithEvents : {}),
-                  ...(date && date.toDateString() === new Date().toDateString() ? styles.calendarDayToday : {})
-                }}
-                className={date && getEventsForDate(date).length > 0 ? "calendar-day calendar-day-with-events" : "calendar-day"}
-                onClick={() => date && getEventsForDate(date).length > 0 && scrollToSection(
-                  date < new Date() ? 'finished-events' :
-                  date.toDateString() === new Date().toDateString() ? 'today-events' :
-                  date.toDateString() === new Date(Date.now() + 86400000).toDateString() ? 'upcoming-events' :
-                  null // Future dates beyond tomorrow don't have a specific section
-                )}
-              >
-                {date && (
-                  <>
-                    <span style={styles.calendarDayNumber}>{date.getDate()}</span>
-                    {getEventsForDate(date).length > 0 && (
-                      <div style={styles.eventIndicator}>
-                        {getEventsForDate(date).length}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {loading ? (
         <div style={styles.loading}>
           <div style={styles.spinner}></div>
@@ -390,11 +339,80 @@ export default function StudentDashboard() {
             )}
           </div>
 
+          {/* All Events */}
+          <div style={styles.categorySection}>
+            <h2 style={styles.categoryTitle}>📊 All Events</h2>
+            {events.length === 0 ? (
+              <p style={styles.noEvents}>No events available</p>
+            ) : (
+              <div style={styles.eventsGrid}>
+                {events
+                  .sort((a, b) => {
+                    const aReminded = reminders.some((r) => r.eventId === a.id)
+                    const bReminded = reminders.some((r) => r.eventId === b.id)
+                    return aReminded - bReminded
+                  })
+                  .map((event) => {
+                    const reminder = reminders.find((r) => r.eventId === event.id)
+                    const isShowingModal = (selectedReminder && pendingReminderEventId === event.id) || (selectedReminder?.eventId === event.id && !pendingReminderEventId)
+                    return (
+                      <div key={event.id} style={styles.eventItem} className="event-item">
+                        <div style={styles.eventWrapper}>
+                          <EventCard
+                            event={event}
+                            onRemind={() => {
+                              setSelectedReminder(null)
+                              setPendingReminderEventId(event.id)
+                              setIsRemindersModalOpen(false)
+                            }}
+                            reminder={reminder}
+                            showActions={false}
+                          />
+                          {reminder && (
+                            <div style={styles.remindedBadge} className="student-reminded-badge">
+                              <span>✅ Reminded - {reminder.reminderTime} before</span>
+                              <button
+                                onClick={() => setSelectedReminder(reminder)}
+                                style={styles.editReminderBtn}
+                                className="edit-reminder-btn"
+                              >
+                                ⚙️ Edit
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {isShowingModal && selectedReminder && (
+                          <div style={styles.modalContainer}>
+                            <ReminderSettings
+                              reminder={selectedReminder}
+                              event={event}
+                              onClose={() => {
+                                setSelectedReminder(null)
+                                setPendingReminderEventId(null)
+                              }}
+                              onUpdate={() => {
+                                if (user) {
+                                  fetchReminders(user.uid)
+                                }
+                                setPendingReminderEventId(null)
+                              }}
+                              userId={user?.uid}
+                              isNewReminder={pendingReminderEventId === event.id}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+          </div>
+
           {/* Upcoming Events */}
           <div style={styles.categorySection}>
-            <h2 style={styles.categoryTitle}>🔮 Tomorrow&apos;s Events</h2>
+            <h2 style={styles.categoryTitle}>🔮 Upcoming Events</h2>
             {categorizedEvents.upcoming.length === 0 ? (
-              <p style={styles.noEvents}>No events tomorrow</p>
+              <p style={styles.noEvents}>No upcoming events</p>
             ) : (
               <div style={styles.eventsGrid}>
                 {categorizedEvents.upcoming
@@ -703,7 +721,7 @@ const styles = {
   },
   filterBtnActive: {
     backgroundColor: '#3498db',
-    borderColor: '#3498db',
+    border: '2px solid #3498db',
     color: 'white',
     boxShadow: '0 2px 8px rgba(52, 152, 219, 0.3)',
   },
@@ -920,12 +938,12 @@ const styles = {
   },
   calendarDayWithEvents: {
     backgroundColor: '#fff3cd',
-    borderColor: '#f39c12',
+    border: '1px solid #f39c12',
     cursor: 'pointer',
   },
   calendarDayToday: {
     backgroundColor: '#d4edda',
-    borderColor: '#27ae60',
+    border: '1px solid #27ae60',
     fontWeight: 'bold',
   },
   calendarDayNumber: {

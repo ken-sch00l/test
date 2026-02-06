@@ -38,7 +38,11 @@ export default function EventCard({ event, onRemind, onEdit, onDelete, showActio
           {event.location && (
             <div style={styles.metaItem} className="event-meta-item">
               <span style={styles.metaIcon}>📍</span>
-              <span>{event.location.substring(0, 40)}{event.location.length > 40 ? '...' : ''}</span>
+              <span>
+                {typeof event.location === 'object' 
+                  ? (event.location.type === 'Others' ? event.location.customText : event.location.type)
+                  : event.location.substring(0, 40)}{typeof event.location === 'string' && event.location.length > 40 ? '...' : ''}
+              </span>
             </div>
           )}
         </div>

@@ -50,6 +50,16 @@ export default function AdminDashboard() {
     return () => unsubscribe()
   }, [router])
 
+  useEffect(() => {
+    // When department filter changes, scroll to events section to show the filtered results
+    const eventsSection = document.getElementById('today-events')
+    if (eventsSection) {
+      setTimeout(() => {
+        eventsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+    }
+  }, [selectedDepartment])
+
   const fetchEvents = async () => {
     try {
       setLoading(true)
@@ -85,6 +95,7 @@ export default function AdminDashboard() {
   }
 
   const departments = ['All', 'CIT', 'CABM', 'CCJE', 'COT', 'CTELA']
+    const departmentsForCreation = ['All', 'CIT', 'CABM', 'CCJE', 'COT', 'CTELA']
 
   const handleFormChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -138,6 +149,7 @@ export default function AdminDashboard() {
         department: 'CIT'
       })
       setIsCreateModalOpen(false)
+      setSelectedDepartment('All') // Reset filter to show all events including the newly created one
       
       // Refresh events
       fetchEvents()
@@ -184,7 +196,7 @@ export default function AdminDashboard() {
   // Helper function to categorize events
   const categorizeEvents = (events) => {
     // Filter events by selected department
-    const filteredEvents = selectedDepartment === 'All' 
+    const filteredEventsList = selectedDepartment === 'All' 
       ? events 
       : events.filter(event => event.department === selectedDepartment)
 
@@ -193,7 +205,7 @@ export default function AdminDashboard() {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    return filteredEvents.reduce((acc, event) => {
+    const categorized = filteredEventsList.reduce((acc, event) => {
       const eventDate = event.date?.toDate?.() || new Date(event.date)
       const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
 
@@ -211,9 +223,12 @@ export default function AdminDashboard() {
 
       return acc
     }, { today: [], upcoming: [], history: [] })
+
+    return { ...categorized, all: filteredEventsList }
   }
 
   const categorizedEvents = categorizeEvents(events)
+  const filteredEvents = categorizedEvents.all
 
   return (
     <div style={styles.container}>
@@ -319,57 +334,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Calendar Section */}
-      <div style={styles.calendarSection}>
-        <h2 style={styles.sectionTitle}>📅 Event Calendar</h2>
-        <div style={styles.calendarContainer}>
-          <div style={styles.calendarHeader}>
-            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} style={styles.calendarNavBtn} className="calendar-nav-btn">
-              ‹
-            </button>
-            <h3 style={styles.calendarTitle}>
-              {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </h3>
-            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} style={styles.calendarNavBtn} className="calendar-nav-btn">
-              ›
-            </button>
-          </div>
-          <div style={styles.calendarGrid}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} style={styles.calendarDayHeader}>{day}</div>
-            ))}
-            {getDaysInMonth(currentMonth).map((date, index) => (
-              <div
-                key={index}
-                style={{
-                  ...styles.calendarDay,
-                  ...(date && getEventsForDate(date).length > 0 ? styles.calendarDayWithEvents : {}),
-                  ...(date && date.toDateString() === new Date().toDateString() ? styles.calendarDayToday : {})
-                }}
-                className={date && getEventsForDate(date).length > 0 ? "calendar-day calendar-day-with-events" : "calendar-day"}
-                onClick={() => date && getEventsForDate(date).length > 0 && scrollToSection(
-                  date < new Date() ? 'event-history' :
-                  date.toDateString() === new Date().toDateString() ? 'today-events' :
-                  date.toDateString() === new Date(Date.now() + 86400000).toDateString() ? 'upcoming-events' :
-                  null // Future dates beyond tomorrow don't have a specific section
-                )}
-              >
-                {date && (
-                  <>
-                    <span style={styles.calendarDayNumber}>{date.getDate()}</span>
-                    {getEventsForDate(date).length > 0 && (
-                      <div style={styles.eventIndicator}>
-                        {getEventsForDate(date).length}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div style={styles.eventsSection}>
         <h2 id="today-events" style={styles.sectionTitle}>📅 Today&apos;s Events</h2>
 
@@ -387,6 +351,32 @@ export default function AdminDashboard() {
         ) : (
           <div style={styles.eventsList}>
             {categorizedEvents.today.map((event) => (
+              <div key={event.id} style={styles.eventItem}>
+                <EventCard
+                  event={event}
+                  onEdit={() => handleEdit(event.id)}
+                  onDelete={() => handleDelete(event.id)}
+                  showActions={true}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <h2 id="all-events" style={styles.sectionTitle}>📊 All Events</h2>
+
+        {filteredEvents.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>📭</div>
+            <h3>No events in this department</h3>
+            <p>Try selecting a different department or create new events.</p>
+            <button onClick={() => setIsCreateModalOpen(true)} style={styles.createBtn}>
+              ➕ Create Event
+            </button>
+          </div>
+        ) : (
+          <div style={styles.eventsList}>
+            {filteredEvents.map((event) => (
               <div key={event.id} style={styles.eventItem}>
                 <EventCard
                   event={event}
@@ -546,7 +536,7 @@ export default function AdminDashboard() {
                   onChange={(e) => handleFormChange('department', e.target.value)} 
                   style={styles.select}
                 >
-                  {departments.map((dept) => (
+                  {departmentsForCreation.map((dept) => (
                     <option key={dept} value={dept}>
                       {dept}
                     </option>
@@ -622,6 +612,57 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Calendar Section */}
+      <div style={styles.calendarSection}>
+        <h2 style={styles.sectionTitle}>📅 Event Calendar</h2>
+        <div style={styles.calendarContainer}>
+          <div style={styles.calendarHeader}>
+            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} style={styles.calendarNavBtn} className="calendar-nav-btn">
+              ‹
+            </button>
+            <h3 style={styles.calendarTitle}>
+              {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </h3>
+            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} style={styles.calendarNavBtn} className="calendar-nav-btn">
+              ›
+            </button>
+          </div>
+          <div style={styles.calendarGrid}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} style={styles.calendarDayHeader}>{day}</div>
+            ))}
+            {getDaysInMonth(currentMonth).map((date, index) => (
+              <div
+                key={index}
+                style={{
+                  ...styles.calendarDay,
+                  ...(date && getEventsForDate(date).length > 0 ? styles.calendarDayWithEvents : {}),
+                  ...(date && date.toDateString() === new Date().toDateString() ? styles.calendarDayToday : {})
+                }}
+                className={date && getEventsForDate(date).length > 0 ? "calendar-day calendar-day-with-events" : "calendar-day"}
+                onClick={() => date && getEventsForDate(date).length > 0 && scrollToSection(
+                  date < new Date() ? 'event-history' :
+                  date.toDateString() === new Date().toDateString() ? 'today-events' :
+                  date.toDateString() === new Date(Date.now() + 86400000).toDateString() ? 'upcoming-events' :
+                  null // Future dates beyond tomorrow don't have a specific section
+                )}
+              >
+                {date && (
+                  <>
+                    <span style={styles.calendarDayNumber}>{date.getDate()}</span>
+                    {getEventsForDate(date).length > 0 && (
+                      <div style={styles.eventIndicator}>
+                        {getEventsForDate(date).length}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -865,12 +906,12 @@ const styles = {
   },
   calendarDayWithEvents: {
     backgroundColor: '#fff3cd',
-    borderColor: '#f39c12',
+    border: '1px solid #f39c12',
     cursor: 'pointer',
   },
   calendarDayToday: {
     backgroundColor: '#d4edda',
-    borderColor: '#27ae60',
+    border: '1px solid #27ae60',
     fontWeight: 'bold',
   },
   calendarDayNumber: {
@@ -1131,7 +1172,7 @@ const styles = {
   filterBtnActive: {
     backgroundColor: '#3498db',
     color: 'white',
-    borderColor: '#3498db',
+    border: '1px solid #3498db',
   },
 }
 

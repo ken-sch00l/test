@@ -3,8 +3,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { auth } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
 import { getRemindersByUser, getAllEvents } from '@/lib/events'
+import { doc, getDoc, collection, onSnapshot } from 'firebase/firestore'
 
 export default function FloatingActionButton() {
   const pathname = usePathname()
@@ -13,26 +14,74 @@ export default function FloatingActionButton() {
   const [isOpen, setIsOpen] = useState(false)
   const [reminders, setReminders] = useState([])
   const [events, setEvents] = useState([])
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [userDepartment, setUserDepartment] = useState(null)
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       if (currentUser) {
         setUser(currentUser)
+        // Get role from localStorage
         const savedRole = localStorage.getItem('userRole')
-        setRole(savedRole)
+        // Force update by setting it after a micro task
+        if (savedRole) {
+          setRole(savedRole)
+        }
 
-        // Fetch reminders for students
+        // Fetch user department if student
         if (savedRole === 'student') {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
+            if (userDoc.exists()) {
+              setUserDepartment(userDoc.data().department || null)
+            }
+          } catch (error) {
+            console.error('Error fetching user data:', error)
+          }
+
+          // Fetch reminders for students
           fetchReminders(currentUser.uid)
         }
       } else {
         setUser(null)
         setRole(null)
+        setEvents([])
+        setReminders([])
       }
     })
 
     return () => unsubscribe()
   }, [])
+
+  // Real-time listener for events - depends on user and role
+  useEffect(() => {
+    if (user && role === 'student') {
+      const unsubscribe = onSnapshot(collection(db, 'events'), (snapshot) => {
+        const eventsList = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        setEvents(eventsList)
+      }, (error) => {
+        console.error('Error listening to events:', error)
+      })
+      return () => unsubscribe()
+    }
+  }, [user, role])
+
+  // Monitor localStorage for role changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedRole = localStorage.getItem('userRole')
+      if (savedRole && savedRole !== role) {
+        setRole(savedRole)
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [role])
 
   const fetchReminders = async (userId) => {
     try {
@@ -77,6 +126,31 @@ export default function FloatingActionButton() {
 
   const links = role === 'admin' ? adminLinks : studentLinks
 
+  // Helper functions for calendar
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1).getDay()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    
+    const days = []
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null)
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(year, month, i))
+    }
+    return days
+  }
+
+  const getEventsForDate = (date) => {
+    return events.filter(event => {
+      const eventDate = event.date && event.date.toDate ? event.date.toDate() : new Date(event.date)
+      return eventDate.toDateString() === date.toDateString() &&
+             (!userDepartment || event.department === userDepartment || event.department === 'All')
+    })
+  }
+
   return (
     <>
       {/* Floating Action Button */}
@@ -117,6 +191,20 @@ export default function FloatingActionButton() {
                   </div>
                 </Link>
               ))}
+              {role === 'student' && (
+                <button
+                  onClick={() => setShowCalendar(true)}
+                  style={{
+                    ...styles.menuItem,
+                    ...styles.calendarButton,
+                    animationDelay: `${links.length * 0.1}s`,
+                  }}
+                  className="menu-item"
+                >
+                  <span style={styles.menuIcon}>📆</span>
+                  <span style={styles.menuLabel}>Event Calendar</span>
+                </button>
+              )}
             </nav>
 
             {/* Reminders Section for Students */}
@@ -147,6 +235,59 @@ export default function FloatingActionButton() {
           </div>
         </div>
       )}
+
+      {/* Calendar Modal */}
+      {showCalendar && (
+        <div style={styles.calendarModalOverlay} onClick={() => setShowCalendar(false)}>
+          <div style={styles.calendarModal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.calendarModalHeader}>
+              <h2 style={styles.calendarModalTitle}>📆 Event Calendar</h2>
+              <button onClick={() => setShowCalendar(false)} style={styles.closeBtn}>✕</button>
+            </div>
+            <div style={styles.calendarModalContent}>
+              <div style={styles.calendarContainer}>
+                <div style={styles.calendarHeader}>
+                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} style={styles.calendarNavBtn}>
+                    ‹
+                  </button>
+                  <h3 style={styles.calendarTitle}>
+                    {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} style={styles.calendarNavBtn}>
+                    ›
+                  </button>
+                </div>
+                <div style={styles.calendarGrid}>
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} style={styles.calendarDayHeader}>{day}</div>
+                  ))}
+                  {getDaysInMonth(currentMonth).map((date, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        ...styles.calendarDay,
+                        ...(date && getEventsForDate(date).length > 0 ? styles.calendarDayWithEvents : {}),
+                        ...(date && date.toDateString() === new Date().toDateString() ? styles.calendarDayToday : {})
+                      }}
+                    >
+                      {date && (
+                        <>
+                          <span style={styles.calendarDayNumber}>{date.getDate()}</span>
+                          {getEventsForDate(date).length > 0 && (
+                            <div style={styles.eventIndicator}>
+                              {getEventsForDate(date).length}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -160,7 +301,7 @@ const styles = {
     height: '60px',
     borderRadius: '50%',
     backgroundColor: '#3498db',
-    border: 'none',
+    borderStyle: 'none',
     color: 'white',
     fontSize: '1.5rem',
     fontWeight: 'bold',
@@ -237,7 +378,7 @@ const styles = {
     textDecoration: 'none',
     color: '#2c3e50',
     transition: 'all 0.2s ease',
-    border: 'none',
+    borderStyle: 'none',
     backgroundColor: 'transparent',
     width: '100%',
     cursor: 'pointer',
@@ -317,6 +458,153 @@ const styles = {
     color: '#7f8c8d',
     wordBreak: 'break-word',
     textAlign: 'center',
+  },
+  calendarButton: {
+    background: 'none',
+    borderStyle: 'none',
+    cursor: 'pointer',
+    padding: '0.875rem 1.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    fontSize: '1rem',
+    transition: 'all 0.3s ease',
+    width: '100%',
+    textAlign: 'left',
+  },
+  calendarModalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2000,
+  },
+  calendarModal: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+    maxWidth: '500px',
+    width: '90%',
+    maxHeight: '80vh',
+    overflow: 'auto',
+  },
+  calendarModalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1.5rem',
+    borderBottom: '1px solid #e1e5e9',
+  },
+  calendarModalTitle: {
+    margin: 0,
+    fontSize: '1.5rem',
+    color: '#2c3e50',
+  },
+  closeBtn: {
+    background: 'none',
+    borderStyle: 'none',
+    fontSize: '1.5rem',
+    cursor: 'pointer',
+    color: '#7f8c8d',
+    padding: '0.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.3s ease',
+  },
+  calendarModalContent: {
+    padding: '2rem 1.5rem',
+  },
+  calendarContainer: {
+    maxWidth: '100%',
+  },
+  calendarHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+  },
+  calendarTitle: {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    margin: 0,
+  },
+  calendarNavBtn: {
+    background: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+    color: 'white',
+    borderStyle: 'none',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    cursor: 'pointer',
+    fontSize: '1.2rem',
+    fontWeight: 'bold',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 2px 8px rgba(52, 152, 219, 0.3)',
+  },
+  calendarGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '0.5rem',
+  },
+  calendarDayHeader: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    color: '#7f8c8d',
+    padding: '0.75rem',
+    fontSize: '0.9rem',
+  },
+  calendarDay: {
+    aspectRatio: '1',
+    border: '1px solid #ecf0f1',
+    borderRadius: '8px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    position: 'relative',
+    backgroundColor: '#ffffff',
+    minHeight: '50px',
+  },
+  calendarDayWithEvents: {
+    backgroundColor: '#fff3cd',
+    border: '1px solid #f39c12',
+  },
+  calendarDayToday: {
+    backgroundColor: '#d4edda',
+    border: '1px solid #27ae60',
+    fontWeight: 'bold',
+  },
+  calendarDayNumber: {
+    fontSize: '1rem',
+    fontWeight: '500',
+    color: '#2c3e50',
+  },
+  eventIndicator: {
+    position: 'absolute',
+    top: '2px',
+    right: '2px',
+    backgroundColor: '#e74c3c',
+    color: 'white',
+    borderRadius: '50%',
+    width: '22px',
+    height: '22px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.75rem',
+    fontWeight: 'bold',
   },
 }
 

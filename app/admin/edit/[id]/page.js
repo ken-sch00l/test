@@ -9,7 +9,7 @@ import { auth, db } from '@/lib/firebase'
 import { updateEvent } from '@/lib/events'
 import { doc, getDoc } from 'firebase/firestore'
 
-const departments = ['Engineering', 'Business', 'Arts', 'Science', 'Medicine', 'Law']
+const departments = ['CIT', 'CTELA', 'CCJE', 'CABM', 'COT']
 
 export default function EditEventPage() {
   const [title, setTitle] = useState('')
@@ -17,25 +17,13 @@ export default function EditEventPage() {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
   const [location, setLocation] = useState('')
-  const [department, setDepartment] = useState('Engineering')
+  const [department, setDepartment] = useState('CIT')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const router = useRouter()
   const params = useParams()
   const eventId = params.id
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user) {
-        router.push('/auth/login')
-      } else {
-        fetchEvent()
-      }
-    })
-
-    return () => unsubscribe()
-  }, [router, eventId, fetchEvent])
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -60,6 +48,18 @@ export default function EditEventPage() {
       setInitialLoading(false)
     }
   }, [eventId])
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        router.push('/auth/login')
+      } else {
+        fetchEvent()
+      }
+    })
+
+    return () => unsubscribe()
+  }, [router, eventId, fetchEvent])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

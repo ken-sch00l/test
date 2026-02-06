@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { auth } from '@/lib/firebase'
 import { addEvent } from '@/lib/events'
 
-const departments = ['Engineering', 'Business', 'Arts', 'Science', 'Medicine', 'Law']
+const departments = ['CIT', 'CTELA', 'CCJE', 'CABM', 'COT']
 
 export default function CreateEventPage() {
   const [title, setTitle] = useState('')
@@ -16,7 +16,7 @@ export default function CreateEventPage() {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
   const [location, setLocation] = useState('')
-  const [department, setDepartment] = useState('Engineering')
+  const [department, setDepartment] = useState('CIT')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState(null)
