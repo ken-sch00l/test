@@ -4,8 +4,8 @@ import Navbar from '@/components/Navbar'
 import NotificationProvider from '@/components/NotificationProvider'
 
 export const metadata = {
-  title: 'Event Reminder App',
-  description: 'A simple event reminder app with admin and student roles',
+  title: 'Academy Remind',
+  description: 'A smart academic event reminder app with admin and student roles',
 }
 
 export default function RootLayout({ children }) {

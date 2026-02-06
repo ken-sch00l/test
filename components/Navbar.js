@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { auth } from '@/lib/firebase'
 import { logout } from '@/lib/auth'
+import Logo from './Logo'
 
 export default function Navbar() {
   const router = useRouter()
@@ -42,7 +43,7 @@ export default function Navbar() {
     <nav style={styles.navbar}>
       <div style={styles.container}>
         <Link href={user ? (role === 'admin' ? '/admin' : '/student') : '/'} style={styles.logo} className="navbar-logo">
-          📅 Event Reminder
+          <Logo variant="text" size="medium" />
         </Link>
 
         <div style={styles.links}>
@@ -86,13 +87,14 @@ export default function Navbar() {
 
 const styles = {
   navbar: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+    background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #7c3aed 100%)',
     color: 'white',
     padding: '1rem 0',
     marginBottom: '2rem',
     position: 'relative',
     overflow: 'hidden',
-    boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+    boxShadow: '0 8px 32px rgba(30, 58, 138, 0.4)',
+    backdropFilter: 'blur(10px)',
   },
   container: {
     maxWidth: '1200px',
@@ -105,16 +107,13 @@ const styles = {
     zIndex: 2,
   },
   logo: {
-    fontSize: '1.8rem',
-    fontWeight: 'bold',
     textDecoration: 'none',
     color: 'white',
-    background: 'linear-gradient(45deg, #fff, #f093fb, #f5576c, #4facfe)',
-    backgroundClip: 'text',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    animation: 'float 3s ease-in-out infinite',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
     position: 'relative',
+    fontWeight: 'bold',
   },
   links: {
     display: 'flex',
@@ -126,54 +125,56 @@ const styles = {
     textDecoration: 'none',
     fontSize: '0.95rem',
     fontWeight: '500',
-    padding: '0.5rem 1rem',
-    borderRadius: '20px',
+    padding: '0.6rem 1.2rem',
+    borderRadius: '8px',
     transition: 'all 0.3s ease',
     position: 'relative',
     overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   userEmail: {
     fontSize: '0.9rem',
-    color: '#ecf0f1',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: '0.5rem 1rem',
-    borderRadius: '20px',
+    color: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    padding: '0.6rem 1.2rem',
+    borderRadius: '8px',
     backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
   },
   logoutBtn: {
-    background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
     color: 'white',
     border: 'none',
-    padding: '0.5rem 1rem',
-    borderRadius: '25px',
+    padding: '0.6rem 1.2rem',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '0.9rem',
     fontWeight: '600',
     transition: 'all 0.3s ease',
-    boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)',
+    boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)',
     position: 'relative',
     overflow: 'hidden',
   },
 }
 
-// Add fun animations
+// Add animations
 const navbarStyles = `
   .navbar-link:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
   }
 
   .navbar-logout:hover {
     transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    25% { transform: translateY(-5px) rotate(1deg); }
-    50% { transform: translateY(-10px) rotate(-1deg); }
-    75% { transform: translateY(-5px) rotate(0.5deg); }
+    0%, 100% { transform: translateY(0px); }
+    25% { transform: translateY(-5px); }
+    50% { transform: translateY(-8px); }
+    75% { transform: translateY(-5px); }
   }
 
   .navbar-logo {

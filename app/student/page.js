@@ -360,11 +360,7 @@ export default function StudentDashboard() {
                         <div style={styles.eventWrapper}>
                           <EventCard
                             event={event}
-                            onRemind={() => {
-                              setSelectedReminder(null)
-                              setPendingReminderEventId(event.id)
-                              setIsRemindersModalOpen(false)
-                            }}
+                            onRemind={() => handleRemind(event.id)}
                             reminder={reminder}
                             showActions={false}
                           />

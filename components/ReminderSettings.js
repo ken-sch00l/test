@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { updateReminder, removeReminder, addReminder } from '@/lib/events'
-import styles from '@/app/globals.css'
 
 export default function ReminderSettings({ reminder, event, onClose, onUpdate, userId, isNewReminder }) {
   const [reminderTime, setReminderTime] = useState(reminder?.reminderTime || '1 day')
@@ -83,16 +82,42 @@ export default function ReminderSettings({ reminder, event, onClose, onUpdate, u
     }
   }
 
+  const localStyles = {
+    modalBackdrop: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+    },
+    modalContent: {
+      background: 'white',
+      padding: '1.5rem',
+      borderRadius: '8px',
+      width: '100%',
+      maxWidth: '480px',
+      boxShadow: '0 6px 24px rgba(0,0,0,0.2)',
+    },
+    modalTitle: {
+      margin: 0,
+      marginBottom: '8px',
+      fontSize: '1.1rem',
+      fontWeight: '700',
+    },
+  }
+
   return (
-    <div style={styles.modalBackdrop}>
-      <div style={styles.modalContent}>
-        <h3 style={styles.modalTitle}>Edit Reminder</h3>
+    <div style={localStyles.modalBackdrop}>
+      <div style={localStyles.modalContent}>
+        <h3 style={localStyles.modalTitle}>Edit Reminder</h3>
         {event && <p style={{ marginBottom: '10px', color: '#666' }}>{event.title}</p>}
 
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-            Remind me:
-          </label>
           <select
             value={reminderTime}
             onChange={(e) => setReminderTime(e.target.value)}

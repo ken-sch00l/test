@@ -43,7 +43,7 @@ export default function Home() {
     <div style={styles.container}>
       <div style={styles.hero}>
         <div style={styles.heroContent}>
-          <h1 style={styles.title}>📅 Event Reminder</h1>
+          <h1 style={styles.title}>🎓 Academy Remind</h1>
           <p style={styles.subtitle}>Never miss an important event with smart notifications and easy management</p>
 
           {!user ? (
@@ -137,7 +137,7 @@ export default function Home() {
 
       {/* Features Section */}
       <div style={styles.features}>
-        <h2 style={styles.featuresTitle}>✨ Why Choose Event Reminder?</h2>
+        <h2 style={styles.featuresTitle}>✨ Why Choose Academy Remind?</h2>
         <div style={styles.featuresGrid}>
           <div style={styles.feature} className="feature">
             <div style={styles.featureIcon}>🔔</div>
